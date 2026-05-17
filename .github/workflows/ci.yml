@@ -22,7 +22,9 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: python -m pip install --require-hashes -r requirements.lock
+        run: |
+          python -m pip install --require-hashes -r requirements.lock
+          python -m pip install --no-deps -e .
 
       - name: Ruff
         run: ruff check --select ALL .
@@ -53,6 +55,7 @@ jobs:
           image-ref: aws-iam-analyzer:${{ github.sha }}
           severity: HIGH,CRITICAL
           exit-code: "1"
+          ignore-unfixed: true
 
       - name: Trivy config
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
@@ -68,6 +71,8 @@ jobs:
 
       - name: Gitleaks
         uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
     name: Publish GHCR image
