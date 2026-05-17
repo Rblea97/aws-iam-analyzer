@@ -1,0 +1,15 @@
+.git
+.github
+.venv
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.codex-visuals
+.playwright-mcp
+tests
+docs
+*.md
+*.tmp
+.env
+.env.*
+.aws
