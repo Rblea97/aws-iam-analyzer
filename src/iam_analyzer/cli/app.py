@@ -7,3 +7,11 @@ app = typer.Typer(
     rich_markup_mode="rich",
     help="AWS IAM and CloudTrail posture analyzer for CIS AWS Foundations Benchmark v5.0.0.",
 )
+
+
+@app.callback(invoke_without_command=True)
+def main(ctx: typer.Context) -> None:
+    """AWS IAM and CloudTrail posture analyzer for CIS AWS Foundations Benchmark v5.0.0."""
+    if ctx.invoked_subcommand is None:
+        typer.echo(ctx.get_help())
+        ctx.exit(0)
