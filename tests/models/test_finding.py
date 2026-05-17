@@ -179,7 +179,7 @@ def test_scan_result_model_dump_json_matches_required_top_level_structure() -> N
             account_id="123456789012",
             scan_timestamp=datetime(2026, 5, 17, 22, 30, tzinfo=UTC),
             benchmark="CIS AWS Foundations Benchmark v5.0.0",
-            controls_evaluated=18,
+            controls_evaluated=("CIS-1.5",),
             duration_ms=1250,
         ),
         summary=ScanSummary(CRITICAL=0, HIGH=1, MEDIUM=0, LOW=0, PASS=0),
@@ -193,7 +193,7 @@ def test_scan_result_model_dump_json_matches_required_top_level_structure() -> N
         "account_id": "123456789012",
         "scan_timestamp": "2026-05-17T22:30:00Z",
         "benchmark": "CIS AWS Foundations Benchmark v5.0.0",
-        "controls_evaluated": 18,
+        "controls_evaluated": ["CIS-1.5"],
         "duration_ms": 1250,
     }
     assert dumped["summary"] == {

@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
+from iam_analyzer.checks.registry import is_known_control_id
 from iam_analyzer.models.finding import Finding  # noqa: TC001
 
 
@@ -21,7 +22,7 @@ class ScanMetadata(BaseModel):
     account_id: str = Field(min_length=1)
     scan_timestamp: datetime
     benchmark: str = Field(min_length=1)
-    controls_evaluated: int = Field(ge=0)
+    controls_evaluated: tuple[str, ...]
     duration_ms: int = Field(ge=0)
 
     @field_validator("scan_timestamp")
@@ -30,6 +31,18 @@ class ScanMetadata(BaseModel):
         """Require timezone-aware UTC scan timestamps."""
         if value.tzinfo is None or value.utcoffset() != UTC.utcoffset(value):
             msg = "scan_timestamp must be timezone-aware UTC"
+            raise ValueError(msg)
+        return value
+
+    @field_validator("controls_evaluated")
+    @classmethod
+    def validate_controls_are_registered(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        """Require scan metadata to list registered controls by ID."""
+        unknown_controls = [
+            control_id for control_id in value if not is_known_control_id(control_id)
+        ]
+        if unknown_controls:
+            msg = f"Unknown controls_evaluated IDs: {', '.join(unknown_controls)}"
             raise ValueError(msg)
         return value
 
