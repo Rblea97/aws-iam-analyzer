@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "iam-analyzer"
+version = "0.1.0"
+description = "AWS IAM and CloudTrail posture analyzer for CIS AWS Foundations Benchmark v5.0.0"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = "Apache-2.0"
+authors = [{ name = "Richie Blea" }]
+dependencies = [
+  "boto3>=1.41.0",
+  "typer>=0.25.0",
+  "pydantic>=2.13.0",
+  "rich>=15.0.0",
+  "structlog>=25.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "moto>=5.1.0",
+  "pytest>=9.0.0",
+  "pytest-cov>=7.0.0",
+  "ruff>=0.14.0",
+  "mypy>=1.18.0",
+  "bandit>=1.8.0",
+  "pip-audit>=2.9.0",
+]
+
+[project.scripts]
+iam-analyzer = "iam_analyzer.cli.app:app"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=src --cov-report=term-missing --cov-fail-under=85"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["iam_analyzer"]
