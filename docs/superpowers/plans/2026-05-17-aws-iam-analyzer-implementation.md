@@ -741,6 +741,7 @@ For each control, write compliant, non-compliant, and permission-denied tests:
 - `CIS-3.1`
 - `CIS-3.2`
 - `CIS-3.4`
+- `CIS-3.5`
 - `EHC-CT-1`
 - `EHC-CT-2`
 - `EHC-CT-3`
@@ -763,10 +764,11 @@ Implement:
 
 - `check_cis_3_1_cloudtrail_enabled_all_regions`
 - `check_cis_3_2_log_file_validation_enabled`
-- `check_cis_3_4_cloudtrail_kms_encryption_enabled`
+- `check_cis_3_4_cloudtrail_bucket_access_logging_enabled`
+- `check_cis_3_5_cloudtrail_kms_encryption_enabled`
 - `check_ehc_ct_1_cloudwatch_logs_integration`
 - `check_ehc_ct_2_cloudtrail_bucket_not_public`
-- `check_ehc_ct_3_cloudtrail_bucket_access_logging_enabled`
+- `check_ehc_ct_3_management_event_coverage`
 
 Use CloudTrail client for trail metadata and S3 client for bucket checks. Return `MANUAL_CHECK` when S3 bucket evidence cannot be retrieved.
 

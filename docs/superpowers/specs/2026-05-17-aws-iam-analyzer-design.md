@@ -85,13 +85,14 @@ Strict CIS v5.0.0 CloudTrail controls:
 
 - `CIS-3.1`: Ensure CloudTrail is enabled and configured with at least one multi-region trail including read and write management events.
 - `CIS-3.2`: Ensure CloudTrail log file validation is enabled.
-- `CIS-3.4`: Ensure CloudTrail logs are encrypted at rest using KMS keys.
+- `CIS-3.4`: Ensure S3 bucket access logging is enabled on the CloudTrail S3 bucket.
+- `CIS-3.5`: Ensure CloudTrail logs are encrypted at rest using KMS keys.
 
 Enterprise CloudTrail hardening controls:
 
 - `EHC-CT-1`: Ensure CloudTrail is integrated with CloudWatch Logs.
 - `EHC-CT-2`: Ensure the CloudTrail S3 bucket is not publicly accessible.
-- `EHC-CT-3`: Ensure S3 server access logging is enabled on the CloudTrail log bucket.
+- `EHC-CT-3`: Ensure CloudTrail management event coverage is hardened.
 
 The enterprise hardening checks are useful for production security posture but must be labeled separately in the CLI, JSON report, README, and remediation text.
 
