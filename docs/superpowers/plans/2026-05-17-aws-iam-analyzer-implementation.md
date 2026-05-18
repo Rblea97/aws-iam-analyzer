@@ -799,7 +799,7 @@ git commit -m "feat(checks): implement CloudTrail and hardening checks"
 - Test: `tests/scanner/test_orchestrator.py`
 - Test: `tests/cli/test_app.py`
 
-- [ ] **Step 1: Write orchestrator tests**
+- [x] **Step 1: Write orchestrator tests**
 
 Tests must assert:
 
@@ -810,7 +810,7 @@ Tests must assert:
 - scan duration is populated
 - completion log includes account ID, region, controls evaluated, summary, and duration
 
-- [ ] **Step 2: Run orchestrator tests to verify failure**
+- [x] **Step 2: Run orchestrator tests to verify failure**
 
 Run:
 
@@ -820,15 +820,15 @@ pytest tests/scanner/test_orchestrator.py -v
 
 Expected: tests fail because orchestrator does not exist.
 
-- [ ] **Step 3: Implement orchestrator**
+- [x] **Step 3: Implement orchestrator**
 
 Implement `run_scan(session_manager, region) -> ScanResult`. It creates needed service clients once, passes clients into check functions, aggregates findings, and logs one scan completion event.
 
-- [ ] **Step 4: Wire CLI to orchestrator**
+- [x] **Step 4: Wire CLI to orchestrator**
 
 The CLI calls the session manager, orchestrator, terminal reporter, optional JSON reporter, and exit-code logic.
 
-- [ ] **Step 5: Run orchestrator and CLI tests**
+- [x] **Step 5: Run orchestrator and CLI tests**
 
 Run:
 
