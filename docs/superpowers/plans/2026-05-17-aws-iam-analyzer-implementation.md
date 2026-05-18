@@ -692,19 +692,21 @@ Expected: tests fail because IAM checks are incomplete.
 
 - [ ] **Step 3: Implement IAM checks**
 
-Implement one function per control:
+Implement one function per Task 8 IAM control using CIS AWS Foundations Benchmark v5.0.0 numbering validated during implementation:
 
-- `check_cis_1_5_root_access_key_absent`
-- `check_cis_1_6_root_hardware_mfa_enabled`
-- `check_cis_1_7_password_policy_strong`
-- `check_cis_1_10_access_keys_rotated`
+- `check_cis_1_3_root_access_key_absent`
+- `check_cis_1_5_root_hardware_mfa_enabled`
+- `check_cis_1_7_password_min_length_14`
+- `check_cis_1_8_password_reuse_prevention`
+- `check_cis_1_9_console_users_have_mfa`
+- `check_cis_1_11_unused_credentials_removed`
+- `check_cis_1_13_access_keys_rotated`
 - `check_cis_1_14_no_direct_user_policy_attachments`
-- `check_cis_1_15_unused_credentials_disabled`
-- `check_cis_1_16_unused_credentials_removed`
-- `check_cis_1_19_console_users_have_mfa`
-- `check_cis_1_21_no_admin_wildcard_customer_policies`
+- `check_cis_1_15_no_admin_wildcard_policies`
+- `check_cis_1_16_support_role_exists`
+- `check_cis_1_21_cloudshell_full_access_restricted`
 
-Candidate IAM controls remain in the registry as disabled metadata until authoritative IDs and audit procedures are confirmed.
+Do not reintroduce stale CIS v3.0.0/v1.4.0 numbering for v5.0.0 controls.
 
 - [ ] **Step 4: Run IAM tests**
 

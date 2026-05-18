@@ -54,26 +54,32 @@ Run Docker: docker run --rm -e AWS_PROFILE=<profile> -v ~/.aws:/home/appuser/.aw
 
 **Strict CIS v1.0 controls:**
 
+- `CIS-1.3`
+- `CIS-1.4`
 - `CIS-1.5`
 - `CIS-1.6`
 - `CIS-1.7`
+- `CIS-1.8`
+- `CIS-1.9`
 - `CIS-1.10`
+- `CIS-1.11`
+- `CIS-1.12`
+- `CIS-1.13`
 - `CIS-1.14`
 - `CIS-1.15`
 - `CIS-1.16`
+- `CIS-1.17`
+- `CIS-1.18`
 - `CIS-1.19`
+- `CIS-1.20`
 - `CIS-1.21`
 - `CIS-3.1`
 - `CIS-3.2`
 - `CIS-3.4`
 
-**Candidate IAM controls:**
-
-- `CIS-1.8-CANDIDATE`
-- `CIS-1.11-CANDIDATE`
-- `CIS-1.12-CANDIDATE`
-
-Candidate IAM controls require authoritative CIS AWS Foundations Benchmark v5.0.0 validation before strict CIS implementation.
+The IAM IDs above are aligned to CIS AWS Foundations Benchmark v5.0.0 using the
+AWS Security Hub CSPM mapping and cross-checked against public CIS v5.0.0
+implementation references. Do not reintroduce stale v3.0.0/v1.4.0 numbering.
 
 **Enterprise hardening controls:**
 
