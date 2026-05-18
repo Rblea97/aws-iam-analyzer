@@ -63,25 +63,21 @@ Strict CIS v5.0.0 controls use CIS control IDs and titles validated against the 
 
 ### IAM Controls
 
-Initial IAM v1.0 controls:
+Initial IAM v1.0 controls were corrected during Task 8 against the AWS Security Hub CSPM CIS v5.0.0 mapping and public implementation references:
 
-- `CIS-1.5`: Ensure the root user account access key does not exist.
-- `CIS-1.6`: Ensure hardware MFA is enabled for the root user.
-- `CIS-1.7`: Ensure IAM password policy requires strong configuration.
-- `CIS-1.10`: Ensure IAM user access keys are rotated every 90 days or less.
-- `CIS-1.14`: Ensure IAM users do not have IAM policies attached directly.
-- `CIS-1.15`: Ensure IAM credentials unused for 90 days or more are disabled.
-- `CIS-1.16`: Ensure unused IAM user credentials are removed.
-- `CIS-1.19`: Ensure MFA is enabled for all IAM users that have a console password.
-- `CIS-1.21`: Ensure IAM customer managed policies do not allow wildcard administrative permissions.
+- `CIS-1.3`: Ensure no root user account access key exists.
+- `CIS-1.5`: Ensure hardware MFA is enabled for the root user account.
+- `CIS-1.7`: Ensure IAM password policy requires minimum length of 14 or greater.
+- `CIS-1.8`: Ensure IAM password policy prevents password reuse.
+- `CIS-1.9`: Ensure MFA is enabled for all IAM users that have a console password.
+- `CIS-1.11`: Ensure credentials unused for 45 days or more are removed.
+- `CIS-1.13`: Ensure access keys are rotated every 90 days or less.
+- `CIS-1.14`: Ensure IAM users receive permissions only through groups.
+- `CIS-1.15`: Ensure IAM policies that allow full administrative privileges are not attached.
+- `CIS-1.16`: Ensure a support role has been created to manage incidents with AWS Support.
+- `CIS-1.21`: Ensure access to AWSCloudShellFullAccess is restricted.
 
-Additional IAM controls requested by project scope and included where they can be tied to auditable IAM evidence:
-
-- `CIS-1.8-CANDIDATE`: Root console-use review. This must be validated against the benchmark text before implementation and may become `MANUAL_CHECK` or be removed if not authoritative for v5.0.0.
-- `CIS-1.11-CANDIDATE`: Ensure IAM users do not have inline policies. This must be validated against the benchmark text before implementation.
-- `CIS-1.12-CANDIDATE`: Ensure IAM groups/roles are used for permissions instead of direct user attachment. This must be validated against the benchmark text before implementation.
-
-Candidate controls cannot be implemented as strict CIS findings until their final CIS IDs and audit procedures are confirmed from an authoritative benchmark source.
+The registry also contains the remaining strict CIS v5 IAM IDs so the Finding model can validate future v1.0 additions without reintroducing stale numbering.
 
 ### CloudTrail Controls
 
@@ -165,10 +161,10 @@ Use Option A: explicit registry.
 
 ```python
 CheckSpec(
-    control_id="CIS-1.5",
-    title="Ensure the root user account access key does not exist",
+    control_id="CIS-1.3",
+    title="Ensure no root user account access key exists",
     service="iam",
-    function=check_cis_1_5_root_access_key_absent,
+    function=check_cis_1_3_root_access_key_absent,
 )
 ```
 
@@ -667,4 +663,3 @@ The project is not complete until:
 - README documents local, Docker, IAM policy, controls, examples, and contribution process.
 - GitHub Actions gates pass.
 - GHCR image publishes on `main`.
-

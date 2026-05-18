@@ -22,25 +22,31 @@ class ControlMetadata:
 
 
 STRICT_CIS_CONTROL_IDS = (
+    "CIS-1.3",
+    "CIS-1.4",
     "CIS-1.5",
     "CIS-1.6",
     "CIS-1.7",
+    "CIS-1.8",
+    "CIS-1.9",
     "CIS-1.10",
+    "CIS-1.11",
+    "CIS-1.12",
+    "CIS-1.13",
     "CIS-1.14",
     "CIS-1.15",
     "CIS-1.16",
+    "CIS-1.17",
+    "CIS-1.18",
     "CIS-1.19",
+    "CIS-1.20",
     "CIS-1.21",
     "CIS-3.1",
     "CIS-3.2",
     "CIS-3.4",
 )
 
-CANDIDATE_CONTROL_IDS = (
-    "CIS-1.8-CANDIDATE",
-    "CIS-1.11-CANDIDATE",
-    "CIS-1.12-CANDIDATE",
-)
+CANDIDATE_CONTROL_IDS: tuple[str, ...] = ()
 
 ENTERPRISE_HARDENING_CONTROL_IDS = (
     "EHC-CT-1",
@@ -49,15 +55,29 @@ ENTERPRISE_HARDENING_CONTROL_IDS = (
 )
 
 _CONTROL_TITLES: dict[str, str] = {
-    "CIS-1.5": "Ensure MFA is enabled for the root user",
-    "CIS-1.6": "Ensure hardware MFA is enabled for the root user",
-    "CIS-1.7": "Eliminate use of the root user for administrative and daily tasks",
-    "CIS-1.10": "Ensure IAM password policy prevents password reuse",
-    "CIS-1.14": "Ensure access keys are rotated within the allowed period",
-    "CIS-1.15": "Ensure IAM users receive permissions only through groups",
-    "CIS-1.16": "Ensure no IAM policies allow full administrative privileges",
-    "CIS-1.19": "Ensure expired SSL/TLS certificates stored in IAM are removed",
-    "CIS-1.21": "Ensure IAM instance roles are used for AWS resource access",
+    "CIS-1.3": "Ensure no root user account access key exists",
+    "CIS-1.4": "Ensure MFA is enabled for the root user account",
+    "CIS-1.5": "Ensure hardware MFA is enabled for the root user account",
+    "CIS-1.6": "Eliminate use of the root user for administrative and daily tasks",
+    "CIS-1.7": "Ensure IAM password policy requires minimum length of 14 or greater",
+    "CIS-1.8": "Ensure IAM password policy prevents password reuse",
+    "CIS-1.9": "Ensure MFA is enabled for all IAM users that have a console password",
+    "CIS-1.10": (
+        "Do not create access keys during initial setup for IAM users with a console password"
+    ),
+    "CIS-1.11": "Ensure credentials unused for 45 days or more are removed",
+    "CIS-1.12": "Ensure there is only one active access key for any single IAM user",
+    "CIS-1.13": "Ensure access keys are rotated every 90 days or less",
+    "CIS-1.14": "Ensure IAM users receive permissions only through groups",
+    "CIS-1.15": "Ensure IAM policies that allow full administrative privileges are not attached",
+    "CIS-1.16": "Ensure a support role has been created to manage incidents with AWS Support",
+    "CIS-1.17": "Ensure IAM instance roles are used for AWS resource access from instances",
+    "CIS-1.18": "Ensure that all expired SSL/TLS certificates stored in IAM are removed",
+    "CIS-1.19": "Ensure that IAM External Access Analyzer is enabled for all regions",
+    "CIS-1.20": (
+        "Ensure IAM users are managed centrally via identity federation or AWS Organizations"
+    ),
+    "CIS-1.21": "Ensure access to AWSCloudShellFullAccess is restricted",
     "CIS-3.1": "Ensure CloudTrail is enabled in all regions",
     "CIS-3.2": "Ensure CloudTrail log file validation is enabled",
     "CIS-3.4": "Ensure CloudTrail trails are integrated with CloudWatch Logs",
@@ -80,8 +100,7 @@ def _metadata_for(control_id: str, category: ControlCategory) -> ControlMetadata
 
 _CONTROL_REGISTRY: dict[str, ControlMetadata] = {
     **{
-        control_id: _metadata_for(control_id, "strict_cis")
-        for control_id in STRICT_CIS_CONTROL_IDS
+        control_id: _metadata_for(control_id, "strict_cis") for control_id in STRICT_CIS_CONTROL_IDS
     },
     **{control_id: _metadata_for(control_id, "candidate") for control_id in CANDIDATE_CONTROL_IDS},
     **{
