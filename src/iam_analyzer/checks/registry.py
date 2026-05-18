@@ -44,6 +44,7 @@ STRICT_CIS_CONTROL_IDS = (
     "CIS-3.1",
     "CIS-3.2",
     "CIS-3.4",
+    "CIS-3.5",
 )
 
 CANDIDATE_CONTROL_IDS: tuple[str, ...] = ()
@@ -78,14 +79,15 @@ _CONTROL_TITLES: dict[str, str] = {
         "Ensure IAM users are managed centrally via identity federation or AWS Organizations"
     ),
     "CIS-1.21": "Ensure access to AWSCloudShellFullAccess is restricted",
-    "CIS-3.1": "Ensure CloudTrail is enabled in all regions",
+    "CIS-3.1": "Ensure CloudTrail is enabled and configured with at least one multi-Region trail",
     "CIS-3.2": "Ensure CloudTrail log file validation is enabled",
-    "CIS-3.4": "Ensure CloudTrail trails are integrated with CloudWatch Logs",
+    "CIS-3.4": "Ensure S3 bucket access logging is enabled on the CloudTrail S3 bucket",
+    "CIS-3.5": "Ensure CloudTrail logs are encrypted at rest using KMS keys",
     "CIS-1.8-CANDIDATE": "Candidate IAM password policy control",
     "CIS-1.11-CANDIDATE": "Candidate IAM credential usage control",
     "CIS-1.12-CANDIDATE": "Candidate IAM credential rotation control",
-    "EHC-CT-1": "Ensure CloudTrail uses a dedicated S3 bucket",
-    "EHC-CT-2": "Ensure CloudTrail logs are encrypted with a customer managed KMS key",
+    "EHC-CT-1": "Ensure CloudTrail is integrated with CloudWatch Logs",
+    "EHC-CT-2": "Ensure the CloudTrail S3 bucket is not publicly accessible",
     "EHC-CT-3": "Ensure CloudTrail management event coverage is hardened",
 }
 

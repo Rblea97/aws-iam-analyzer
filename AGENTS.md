@@ -76,8 +76,9 @@ Run Docker: docker run --rm -e AWS_PROFILE=<profile> -v ~/.aws:/home/appuser/.aw
 - `CIS-3.1`
 - `CIS-3.2`
 - `CIS-3.4`
+- `CIS-3.5`
 
-The IAM IDs above are aligned to CIS AWS Foundations Benchmark v5.0.0 using the
+The IAM and CloudTrail IDs above are aligned to CIS AWS Foundations Benchmark v5.0.0 using the
 AWS Security Hub CSPM mapping and cross-checked against public CIS v5.0.0
 implementation references. Do not reintroduce stale v3.0.0/v1.4.0 numbering.
 
