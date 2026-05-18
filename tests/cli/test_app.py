@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -82,6 +84,21 @@ def test_scan_help_mentions_cis_benchmark_version() -> None:
 
     assert result.exit_code == 0
     assert "CIS AWS Foundations Benchmark v5.0.0" in result.output
+
+
+def test_cli_app_imports_cleanly_in_fresh_process() -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import iam_analyzer.cli.app",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def test_scan_rejects_invalid_profile_path_traversal() -> None:
@@ -222,3 +239,35 @@ def test_scan_verbose_configures_debug_logging(monkeypatch: pytest.MonkeyPatch) 
 
     assert result.exit_code == 0
     assert configured_levels == ["DEBUG"]
+
+
+def test_run_scan_constructs_session_manager_and_delegates_to_orchestrator(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeSessionManager:
+        def __init__(self, *, profile: str | None, region: str) -> None:
+            self.profile = profile
+            self.region = region
+
+    session_managers: list[FakeSessionManager] = []
+    orchestrator_calls: list[tuple[FakeSessionManager, str]] = []
+
+    def session_manager_factory(*, profile: str | None, region: str) -> FakeSessionManager:
+        manager = FakeSessionManager(profile=profile, region=region)
+        session_managers.append(manager)
+        return manager
+
+    def orchestrator_run_scan(session_manager: FakeSessionManager, *, region: str) -> ScanResult:
+        orchestrator_calls.append((session_manager, region))
+        return _scan_result()
+
+    monkeypatch.setattr(cli_app, "AwsSessionManager", session_manager_factory)
+    monkeypatch.setattr(cli_app.scan_orchestrator, "run_scan", orchestrator_run_scan)
+
+    result = cli_app.run_scan(profile="audit_profile", region="us-west-2")
+
+    assert result == _scan_result()
+    assert len(session_managers) == 1
+    assert session_managers[0].profile == "audit_profile"
+    assert session_managers[0].region == "us-west-2"
+    assert orchestrator_calls == [(session_managers[0], "us-west-2")]

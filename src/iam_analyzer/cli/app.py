@@ -13,7 +13,8 @@ import typer
 from iam_analyzer.logging_config import configure_logging
 from iam_analyzer.models import FindingStatus, ScanResult, ScanSummary, Severity
 from iam_analyzer.reporter import render_terminal_report, write_json_report
-from iam_analyzer.scanner import ScannerConfigurationError, ScannerError
+from iam_analyzer.scanner import AwsSessionManager, ScannerError
+from iam_analyzer.scanner import orchestrator as scan_orchestrator
 
 _BENCHMARK = "CIS AWS Foundations Benchmark v5.0.0"
 _PROFILE_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
@@ -81,12 +82,8 @@ def _filter_scan_result(scan_result: ScanResult, severity_filter: Severity | Non
 
 def run_scan(*, profile: str | None, region: str) -> ScanResult:
     """Run the currently wired scan flow and return a validated result."""
-    _ = profile, region
-    msg = (
-        "Scan orchestration is not implemented yet. "
-        "Task 10 will wire credential resolution, checks, and reporting."
-    )
-    raise ScannerConfigurationError(msg)
+    session_manager = AwsSessionManager(profile=profile, region=region)
+    return scan_orchestrator.run_scan(session_manager, region=region)
 
 
 @app.command(help=f"Scan an AWS account against {_BENCHMARK}.")
