@@ -39,6 +39,13 @@ docker run --rm aws-iam-analyzer --help
 docker run --rm aws-iam-analyzer scan --help
 ```
 
+Run the published container image:
+
+```powershell
+docker pull ghcr.io/rblea97/aws-iam-analyzer:latest
+docker run --rm ghcr.io/rblea97/aws-iam-analyzer:latest --help
+```
+
 Install and run locally against a lab AWS account:
 
 ```powershell
@@ -62,6 +69,12 @@ The CLI never accepts raw AWS credential values or credential files as arguments
 
 ## Docker Usage
 
+Use the published GHCR image:
+
+```powershell
+docker run --rm ghcr.io/rblea97/aws-iam-analyzer:latest --help
+```
+
 Build the image:
 
 ```powershell
@@ -72,6 +85,15 @@ Run with an AWS profile mounted read-only:
 
 ```powershell
 docker run --rm -e AWS_PROFILE=audit-profile -v "$env:USERPROFILE\.aws:/home/appuser/.aws:ro" aws-iam-analyzer scan
+```
+
+Use the same credential mount with the published image:
+
+```powershell
+docker run --rm `
+  -e AWS_PROFILE=audit-profile `
+  -v "$env:USERPROFILE\.aws:/home/appuser/.aws:ro" `
+  ghcr.io/rblea97/aws-iam-analyzer:latest scan
 ```
 
 Write a report from inside the container:
@@ -86,6 +108,12 @@ docker run --rm `
 For Windows Docker Desktop, writing directly to a bind-mounted host output directory can depend on host filesystem permissions. The portable path is to write inside `/home/appuser` and copy the report out with `docker cp`, or to use a host directory with explicit write permission for the container user.
 
 Do not bake AWS credentials, `.env` files, or local AWS config into the image.
+
+## Release And Demo
+
+The CI workflow publishes GHCR images on every merge to `main` and on version tags. Main builds receive immutable commit SHA tags, `sha-<commit>` tags, and `latest`; release tags such as `v0.1.0` also publish `v0.1.0` and `0.1.0` tags.
+
+See [`docs/release.md`](docs/release.md) for the V1 release checklist, demo validation steps, and release note template.
 
 ## Scanner IAM Policy
 

@@ -4,8 +4,34 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    labels:
+      - dependencies
+      - python
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      python-runtime:
+        patterns:
+          - boto3
+          - botocore
+          - s3transfer
+      python-tooling:
+        patterns:
+          - pytest*
+          - ruff
+          - mypy
+          - bandit
+          - pip-audit
+          - moto
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: ci
+      include: scope

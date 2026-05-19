@@ -34,8 +34,8 @@ Run Docker: docker run --rm -e AWS_PROFILE=<profile> -v ~/.aws:/home/appuser/.aw
 
 - Use GitHub Flow.
 - `main` is always deployable.
-- Task 1 through Task 4 are the approved baseline commits on `main`; never commit directly to `main` after the first four baseline commits.
-- After the baseline commits, use short-lived branches with one of these prefixes: `feat/`, `fix/`, `chore/`, `docs/`, `ci/`, `security/`, `refactor/`, `test/`.
+- Do not commit directly to `main`; use short-lived branches after the initial baseline.
+- Use short-lived branches with one of these prefixes: `feat/`, `fix/`, `chore/`, `docs/`, `ci/`, `security/`, `refactor/`, `test/`.
 - Use conventional commits in this format: `<type>(<scope>): <short description in imperative mood>`.
 - Approved scopes: `cli`, `checks`, `models`, `reporter`, `scanner`, `ci`, `docker`, `deps`, `docs`, `agents`, `tests`, `security`.
 
