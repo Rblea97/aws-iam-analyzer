@@ -946,7 +946,7 @@ git commit -m "docs: document scanner usage controls and IAM policy"
 - Modify: `Dockerfile`
 - Modify: `pyproject.toml`
 
-- [ ] **Step 1: Generate dependency lock with hashes**
+- [x] **Step 1: Generate dependency lock with hashes**
 
 Use a deterministic lock generation command available in the environment. Preferred command:
 
@@ -963,7 +963,7 @@ python -m piptools compile pyproject.toml --extra dev --generate-hashes -o requi
 
 Expected: `requirements.lock` contains exact versions and hashes.
 
-- [ ] **Step 2: Resolve Docker base digest**
+- [x] **Step 2: Resolve Docker base digest**
 
 Resolve the current digest for `python:3.12-slim-bookworm`, replace `<resolved-digest>` in `Dockerfile`, and build:
 
@@ -973,7 +973,7 @@ docker build -t aws-iam-analyzer .
 
 Expected: image builds successfully.
 
-- [ ] **Step 3: Run all local gates**
+- [x] **Step 3: Run all local gates**
 
 Run:
 
@@ -1007,7 +1007,7 @@ hadolint: 0 findings
 gitleaks: 0 secrets detected
 ```
 
-- [ ] **Step 4: Commit dependency and Docker finalization**
+- [x] **Step 4: Commit dependency and Docker finalization**
 
 Run:
 

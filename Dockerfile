@@ -5,8 +5,12 @@ WORKDIR /build
 COPY pyproject.toml requirements.lock ./
 COPY src/ ./src/
 
+# The full dev lock is installed only in the builder so CI and build tooling stay
+# hash-pinned. Runtime receives a wheelhouse built from project runtime deps.
 # README.md is required by pyproject metadata; runtime image does not include docs.
 RUN python -m pip install --no-cache-dir --require-hashes -r requirements.lock \
+    && python -c "import pathlib, tomllib; pyproject = tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8')); pathlib.Path('runtime-requirements.in').write_text('\n'.join(pyproject['project']['dependencies']) + '\n', encoding='utf-8')" \
+    && python -m pip wheel --no-cache-dir --wheel-dir /runtime-wheels --constraint requirements.lock -r runtime-requirements.in \
     && printf '%s\n' '# iam-analyzer' > README.md \
     && python -m pip wheel --no-deps --wheel-dir /wheels .
 
@@ -22,10 +26,11 @@ RUN groupadd --gid 1000 appuser \
 
 WORKDIR /app
 
+COPY --from=builder /runtime-wheels /runtime-wheels
 COPY --from=builder /wheels /wheels
 
-RUN python -m pip install --no-cache-dir /wheels/*.whl \
-    && rm -rf /wheels
+RUN python -m pip install --no-cache-dir --no-index --find-links /runtime-wheels /wheels/*.whl \
+    && rm -rf /runtime-wheels /wheels
 
 USER appuser
 
