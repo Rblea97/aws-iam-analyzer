@@ -1,0 +1,32 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "IamAnalyzerReadOnlyAudit",
+      "Effect": "Allow",
+      "Action": [
+        "sts:GetCallerIdentity",
+        "iam:GenerateCredentialReport",
+        "iam:GetAccountPasswordPolicy",
+        "iam:GetAccountSummary",
+        "iam:GetCredentialReport",
+        "iam:GetPolicy",
+        "iam:GetPolicyVersion",
+        "iam:ListAccessKeys",
+        "iam:ListAttachedUserPolicies",
+        "iam:ListEntitiesForPolicy",
+        "iam:ListPolicies",
+        "iam:ListUserPolicies",
+        "iam:ListUsers",
+        "iam:ListVirtualMFADevices",
+        "cloudtrail:DescribeTrails",
+        "cloudtrail:GetEventSelectors",
+        "cloudtrail:GetTrailStatus",
+        "s3:GetBucketLogging",
+        "s3:GetBucketPolicyStatus",
+        "s3:GetBucketPublicAccessBlock"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

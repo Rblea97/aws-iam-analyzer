@@ -854,7 +854,7 @@ git commit -m "feat(scanner): orchestrate registry-based account scans"
 - Create: `docs/scanner-iam-policy.json`
 - Create: `docs/controls.md`
 
-- [ ] **Step 1: Write scanner IAM policy**
+- [x] **Step 1: Write scanner IAM policy**
 
 `docs/scanner-iam-policy.json` must include only read/list/get permissions required by implemented checks:
 
@@ -900,7 +900,7 @@ git commit -m "feat(scanner): orchestrate registry-based account scans"
 }
 ```
 
-- [ ] **Step 2: Write controls documentation**
+- [x] **Step 2: Write controls documentation**
 
 `docs/controls.md` must list each strict CIS control and each enterprise hardening control with:
 
@@ -911,7 +911,7 @@ git commit -m "feat(scanner): orchestrate registry-based account scans"
 - remediation summary
 - whether it is strict CIS or enterprise hardening
 
-- [ ] **Step 3: Update README**
+- [x] **Step 3: Update README**
 
 README must include:
 
@@ -930,7 +930,7 @@ README must include:
 - contribution guide for new checks
 - license
 
-- [ ] **Step 4: Commit docs**
+- [x] **Step 4: Commit docs**
 
 Run:
 
