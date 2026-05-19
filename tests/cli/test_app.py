@@ -29,15 +29,20 @@ if TYPE_CHECKING:
 runner = CliRunner()
 _SCANNER_FAILURE_EXIT_CODE = 2
 _SCANNER_FAILURE_MESSAGE = "scanner failed"
+_EXPECTED_HIGH_FAILURES = 1
 
 
-def _finding(*, severity: Severity = Severity.HIGH) -> Finding:
+def _finding(
+    *,
+    severity: Severity = Severity.HIGH,
+    status: FindingStatus = FindingStatus.FAIL,
+) -> Finding:
     return Finding.model_validate(
         {
             "control_id": "CIS-1.5",
             "control_title": CONTROL_REGISTRY["CIS-1.5"].title,
             "severity": severity,
-            "status": FindingStatus.FAIL,
+            "status": status,
             "resource_id": "arn:aws:iam::123456789012:root",
             "remediation": "Remediate CIS-1.5 with AWS IAM root MFA documentation.",
             "raw_evidence": {"mfa_enabled": False},
@@ -56,10 +61,27 @@ def _scan_result(*, findings: list[Finding] | None = None) -> ScanResult:
             duration_ms=50,
         ),
         summary=ScanSummary(
-            CRITICAL=sum(1 for finding in finding_list if finding.severity is Severity.CRITICAL),
-            HIGH=sum(1 for finding in finding_list if finding.severity is Severity.HIGH),
-            MEDIUM=sum(1 for finding in finding_list if finding.severity is Severity.MEDIUM),
-            LOW=sum(1 for finding in finding_list if finding.severity is Severity.LOW),
+            CRITICAL=sum(
+                1
+                for finding in finding_list
+                if finding.severity is Severity.CRITICAL
+                and finding.status is not FindingStatus.PASS
+            ),
+            HIGH=sum(
+                1
+                for finding in finding_list
+                if finding.severity is Severity.HIGH and finding.status is not FindingStatus.PASS
+            ),
+            MEDIUM=sum(
+                1
+                for finding in finding_list
+                if finding.severity is Severity.MEDIUM and finding.status is not FindingStatus.PASS
+            ),
+            LOW=sum(
+                1
+                for finding in finding_list
+                if finding.severity is Severity.LOW and finding.status is not FindingStatus.PASS
+            ),
             PASS=sum(1 for finding in finding_list if finding.status is FindingStatus.PASS),
         ),
         findings=finding_list,
@@ -173,7 +195,7 @@ def test_scan_scanner_error_does_not_use_policy_gate_exit_code(
     assert _SCANNER_FAILURE_MESSAGE in result.output
 
 
-def test_scan_severity_filter_limits_terminal_result_counts(
+def test_scan_severity_filter_limits_terminal_findings_without_recounting_summary(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     rendered_results: list[ScanResult] = []
@@ -187,6 +209,8 @@ def test_scan_severity_filter_limits_terminal_result_counts(
             findings=[
                 _finding(severity=Severity.CRITICAL),
                 _finding(severity=Severity.HIGH),
+                _finding(severity=Severity.LOW),
+                _finding(severity=Severity.HIGH, status=FindingStatus.PASS),
             ],
         )
 
@@ -197,9 +221,19 @@ def test_scan_severity_filter_limits_terminal_result_counts(
     result = runner.invoke(cli_app.app, ["scan", "--severity-filter", "CRITICAL"])
 
     assert result.exit_code == 0
-    assert len(rendered_results[0].findings) == 1
+    assert [
+        finding.severity
+        for finding in rendered_results[0].findings
+        if finding.status is not FindingStatus.PASS
+    ] == [Severity.CRITICAL]
+    pass_findings = [
+        finding for finding in rendered_results[0].findings if finding.status is FindingStatus.PASS
+    ]
+    assert len(pass_findings) == 1
     assert rendered_results[0].summary.CRITICAL == 1
-    assert rendered_results[0].summary.HIGH == 0
+    assert rendered_results[0].summary.HIGH == _EXPECTED_HIGH_FAILURES
+    assert rendered_results[0].summary.LOW == 1
+    assert rendered_results[0].summary.PASS == 1
 
 
 def test_scan_output_file_invokes_json_reporter(

@@ -11,7 +11,7 @@ from typing import Annotated
 import typer
 
 from iam_analyzer.logging_config import configure_logging
-from iam_analyzer.models import FindingStatus, ScanResult, ScanSummary, Severity
+from iam_analyzer.models import FindingStatus, ScanResult, Severity
 from iam_analyzer.reporter import render_terminal_report, write_json_report
 from iam_analyzer.scanner import AwsSessionManager, ScannerError
 from iam_analyzer.scanner import orchestrator as scan_orchestrator
@@ -52,20 +52,6 @@ def _has_high_or_critical(scan_result: ScanResult) -> bool:
     return scan_result.summary.CRITICAL > 0 or scan_result.summary.HIGH > 0
 
 
-def _count_severity(scan_result: ScanResult, severity: Severity) -> int:
-    return sum(1 for finding in scan_result.findings if finding.severity is severity)
-
-
-def _summary_for_display(scan_result: ScanResult) -> ScanSummary:
-    return ScanSummary(
-        CRITICAL=_count_severity(scan_result, Severity.CRITICAL),
-        HIGH=_count_severity(scan_result, Severity.HIGH),
-        MEDIUM=_count_severity(scan_result, Severity.MEDIUM),
-        LOW=_count_severity(scan_result, Severity.LOW),
-        PASS=sum(1 for finding in scan_result.findings if finding.status is FindingStatus.PASS),
-    )
-
-
 def _filter_scan_result(scan_result: ScanResult, severity_filter: Severity | None) -> ScanResult:
     if severity_filter is None:
         return scan_result
@@ -74,10 +60,9 @@ def _filter_scan_result(scan_result: ScanResult, severity_filter: Severity | Non
     filtered_findings = [
         finding
         for finding in scan_result.findings
-        if _SEVERITY_RANK[finding.severity] <= minimum_rank
+        if finding.status is FindingStatus.PASS or _SEVERITY_RANK[finding.severity] <= minimum_rank
     ]
-    filtered_result = scan_result.model_copy(update={"findings": filtered_findings})
-    return filtered_result.model_copy(update={"summary": _summary_for_display(filtered_result)})
+    return scan_result.model_copy(update={"findings": filtered_findings})
 
 
 def run_scan(*, profile: str | None, region: str) -> ScanResult:

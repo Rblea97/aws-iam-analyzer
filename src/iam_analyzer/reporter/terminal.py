@@ -105,6 +105,15 @@ def _passing_panel(scan_result: ScanResult) -> Panel | None:
     )
 
 
+def _summary_failure_count(scan_result: ScanResult) -> int:
+    return (
+        scan_result.summary.CRITICAL
+        + scan_result.summary.HIGH
+        + scan_result.summary.MEDIUM
+        + scan_result.summary.LOW
+    )
+
+
 def render_terminal_report(scan_result: ScanResult, *, console: Console | None = None) -> None:
     """Render a scan result to stdout using Rich."""
     output = console or Console(file=sys.stdout)
@@ -112,6 +121,17 @@ def render_terminal_report(scan_result: ScanResult, *, console: Console | None =
 
     output.print(_summary_panel(scan_result))
     if not failing_findings:
+        if _summary_failure_count(scan_result) > 0:
+            output.print(
+                Panel(
+                    "[bold yellow]No findings matched the selected severity filter[/bold yellow]",
+                    border_style="yellow",
+                ),
+            )
+            passing_panel = _passing_panel(scan_result)
+            if passing_panel is not None:
+                output.print(passing_panel)
+            return
         output.print(
             Panel(
                 "[bold green]✓ All evaluated controls passed[/bold green]",
