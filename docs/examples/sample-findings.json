@@ -1,0 +1,76 @@
+{
+  "findings": [
+    {
+      "control_id": "CIS-1.13",
+      "control_title": "Ensure access keys are rotated every 90 days or less",
+      "evaluated_at": "2026-05-19T21:14:01.080668Z",
+      "raw_evidence": {
+        "credential_age_days": 127,
+        "source": "fictional-demo-data",
+        "user": "demo-auditor"
+      },
+      "remediation": "For CIS-1.13, rotate IAM access keys that are older than 90 days. AWS IAM documentation: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html",
+      "resource_id": "arn:aws:iam::123456789012:user/demo-auditor",
+      "severity": "HIGH",
+      "status": "FAIL"
+    },
+    {
+      "control_id": "CIS-3.1",
+      "control_title": "Ensure CloudTrail is enabled and configured with at least one multi-Region trail",
+      "evaluated_at": "2026-05-19T21:14:01.080743Z",
+      "raw_evidence": {
+        "multi_region_trail_present": false,
+        "source": "fictional-demo-data"
+      },
+      "remediation": "For CIS-3.1, configure a multi-Region CloudTrail trail that logs global service events and read/write management events. AWS CloudTrail documentation: https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-create-and-update-a-trail.html",
+      "resource_id": "account:123456789012",
+      "severity": "HIGH",
+      "status": "FAIL"
+    },
+    {
+      "control_id": "EHC-CT-1",
+      "control_title": "Ensure CloudTrail is integrated with CloudWatch Logs",
+      "evaluated_at": "2026-05-19T21:14:01.080752Z",
+      "raw_evidence": {
+        "cloudwatch_logs_configured": false,
+        "source": "fictional-demo-data"
+      },
+      "remediation": "For EHC-CT-1, send CloudTrail events to CloudWatch Logs for operational monitoring. AWS CloudTrail documentation: https://docs.aws.amazon.com/awscloudtrail/latest/userguide/send-cloudtrail-events-to-cloudwatch-logs.html",
+      "resource_id": "arn:aws:cloudtrail:us-east-1:123456789012:trail/demo-trail",
+      "severity": "LOW",
+      "status": "MANUAL_CHECK"
+    },
+    {
+      "control_id": "CIS-3.2",
+      "control_title": "Ensure CloudTrail log file validation is enabled",
+      "evaluated_at": "2026-05-19T21:14:01.080758Z",
+      "raw_evidence": {
+        "log_file_validation_enabled": true,
+        "source": "fictional-demo-data"
+      },
+      "remediation": "For CIS-3.2, keep CloudTrail log file validation enabled. AWS CloudTrail documentation: https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-log-file-validation-intro.html",
+      "resource_id": "arn:aws:cloudtrail:us-east-1:123456789012:trail/demo-trail",
+      "severity": "MEDIUM",
+      "status": "PASS"
+    }
+  ],
+  "scan_metadata": {
+    "account_id": "123456789012",
+    "benchmark": "CIS AWS Foundations Benchmark v5.0.0",
+    "controls_evaluated": [
+      "CIS-1.13",
+      "CIS-3.1",
+      "CIS-3.2",
+      "EHC-CT-1"
+    ],
+    "duration_ms": 948,
+    "scan_timestamp": "2026-05-19T18:30:00Z"
+  },
+  "summary": {
+    "CRITICAL": 0,
+    "HIGH": 2,
+    "LOW": 1,
+    "MEDIUM": 0,
+    "PASS": 1
+  }
+}

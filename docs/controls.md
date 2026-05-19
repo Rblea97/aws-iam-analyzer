@@ -4,6 +4,14 @@ This page documents the controls registered for `aws-iam-analyzer` and the subse
 
 `Strict CIS` controls map to CIS AWS Foundations Benchmark v5.0.0 IDs. `Enterprise hardening` controls are useful CloudTrail checks that are intentionally not reported as CIS findings.
 
+## Coverage Summary
+
+- Executable strict CIS controls: 15
+- Executable enterprise hardening controls: 3
+- Registered strict CIS roadmap controls not yet evaluated: 8
+
+The executable list is the source of truth for scan output. Registered roadmap controls are present so Pydantic validation and documentation can keep stable CIS IDs, but they do not appear in reports until a dedicated check function, tests, catalog entry, and scanner IAM permission update are added.
+
 ## Currently Evaluated Controls
 
 | ID | Title | Category | Evidence APIs | Severity | Remediation summary |
