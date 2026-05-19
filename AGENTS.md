@@ -52,7 +52,25 @@ Run Docker: docker run --rm -e AWS_PROFILE=<profile> -v ~/.aws:/home/appuser/.aw
 
 ## Controls in Scope
 
-**Strict CIS v1.0 controls:**
+**Currently executable v1.0 strict CIS controls:**
+
+- `CIS-1.3`
+- `CIS-1.5`
+- `CIS-1.7`
+- `CIS-1.8`
+- `CIS-1.9`
+- `CIS-1.11`
+- `CIS-1.13`
+- `CIS-1.14`
+- `CIS-1.15`
+- `CIS-1.16`
+- `CIS-1.21`
+- `CIS-3.1`
+- `CIS-3.2`
+- `CIS-3.4`
+- `CIS-3.5`
+
+**Registered strict CIS controls:**
 
 - `CIS-1.3`
 - `CIS-1.4`
