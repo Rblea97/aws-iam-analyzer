@@ -150,6 +150,22 @@ def test_zero_non_passing_findings_prints_all_controls_passed_panel() -> None:
     assert "Passing Controls" in output
 
 
+def test_filtered_report_with_hidden_failures_does_not_print_all_passed_panel() -> None:
+    console = _console()
+    result = _scan_result(
+        [_finding(status=FindingStatus.PASS, remediation="No remediation required.")],
+        ScanSummary(CRITICAL=0, HIGH=1, MEDIUM=1, LOW=0, PASS=1),
+    )
+
+    render_terminal_report(result, console=console)
+    output = console.export_text()
+
+    assert "No findings matched the selected severity filter" in output
+    assert "All evaluated controls passed" not in output
+    assert "Findings requiring attention" not in output
+    assert "Passing Controls" in output
+
+
 def test_aws_derived_text_is_escaped_before_markup_rendering() -> None:
     console = _console()
     result = _scan_result(
