@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -23,8 +24,9 @@ from iam_analyzer.checks.iam import (
     check_cis_1_16_support_role_exists,
     check_cis_1_21_cloudshell_full_access_restricted,
 )
+from iam_analyzer.checks.iam.policy_documents import evaluate_policy_document
 from iam_analyzer.checks.registry import CONTROL_REGISTRY
-from iam_analyzer.models import FindingStatus
+from iam_analyzer.models import FindingStatus, Severity
 
 
 class _FakeIamClient:
@@ -43,9 +45,13 @@ class _FakeIamClient:
     def get_account_password_policy(self) -> dict[str, Any]:
         return _response_or_raise(self.responses["get_account_password_policy"])
 
-    def get_credential_report(self) -> dict[str, bytes]:
+    def get_credential_report(self) -> dict[str, Any]:
         if self.credential_report_errors:
             raise self.credential_report_errors.pop(0)
+        if "credential_report_response" in self.responses:
+            return _response_or_raise(self.responses["credential_report_response"])
+        if "credential_report_content" in self.responses:
+            return {"Content": self.responses["credential_report_content"]}
         rows = _response_or_raise(self.responses["credential_report_rows"])
         return {"Content": _credential_report(rows)}
 
@@ -61,6 +67,21 @@ class _FakeIamClient:
     def get_policy_version(self, *, PolicyArn: str, VersionId: str) -> dict[str, Any]:
         policies = self.responses["policies"]
         return _response_or_raise(policies[PolicyArn]["versions"][VersionId])
+
+    def get_user_policy(self, *, UserName: str, PolicyName: str) -> dict[str, Any]:
+        return _response_or_raise(
+            self.responses["inline_user_policies"][(UserName, PolicyName)],
+        )
+
+    def get_group_policy(self, *, GroupName: str, PolicyName: str) -> dict[str, Any]:
+        return _response_or_raise(
+            self.responses["inline_group_policies"][(GroupName, PolicyName)],
+        )
+
+    def get_role_policy(self, *, RoleName: str, PolicyName: str) -> dict[str, Any]:
+        return _response_or_raise(
+            self.responses["inline_role_policies"][(RoleName, PolicyName)],
+        )
 
 
 class _FakePaginatorUtil:
@@ -212,7 +233,8 @@ def test_registry_uses_authoritative_cis_v5_iam_titles() -> None:
     ],
 )
 def test_cis_1_3_root_access_key_absent(
-    rows: list[dict[str, str]], expected_status: FindingStatus,
+    rows: list[dict[str, str]],
+    expected_status: FindingStatus,
 ) -> None:
     findings = check_cis_1_3_root_access_key_absent(
         _iam_client_with_report(rows),
@@ -228,6 +250,28 @@ def test_cis_1_3_root_access_key_permission_denied_returns_manual_check() -> Non
     findings = check_cis_1_3_root_access_key_absent(client, _empty_paginator())
 
     assert findings[0].status is FindingStatus.MANUAL_CHECK
+
+
+def test_cis_1_3_missing_root_arn_does_not_emit_fictional_root_identifier() -> None:
+    findings = check_cis_1_3_root_access_key_absent(
+        _iam_client_with_report([_root_row(arn="")]),
+        _empty_paginator(),
+    )
+
+    dumped = findings[0].model_dump(mode="json")
+    assert findings[0].resource_id is None
+    assert "arn:aws:iam::123456789012:root" not in json.dumps(dumped)
+
+
+def test_cis_1_3_root_arn_uses_credential_report_identity_when_present() -> None:
+    root_arn = "arn:aws:iam::999999999999:root"
+
+    findings = check_cis_1_3_root_access_key_absent(
+        _iam_client_with_report([_root_row(arn=root_arn)]),
+        _empty_paginator(),
+    )
+
+    assert findings[0].resource_id == root_arn
 
 
 def test_credential_report_checks_poll_until_generation_completes() -> None:
@@ -256,6 +300,70 @@ def test_credential_report_checks_fetch_after_final_generation_completion() -> N
     findings = check_cis_1_3_root_access_key_absent(client, _empty_paginator())
 
     assert findings[0].status is FindingStatus.PASS
+
+
+def test_credential_report_timeout_returns_explicit_manual_check() -> None:
+    client = _FakeIamClient(
+        credential_report_errors=[_report_not_present()] * 8,
+        credential_report_rows=[_root_row()],
+        generate_credential_report_states=["INPROGRESS"] * 8,
+    )
+
+    findings = check_cis_1_3_root_access_key_absent(client, _empty_paginator())
+
+    assert findings[0].status is FindingStatus.MANUAL_CHECK
+    assert findings[0].severity is Severity.HIGH
+    assert findings[0].raw_evidence["error"]["code"] == "CredentialReportTimeout"
+
+
+def test_credential_report_access_denied_returns_explicit_manual_check() -> None:
+    client = _FakeIamClient(
+        credential_report_rows=_access_denied("GetCredentialReport"),
+    )
+
+    findings = check_cis_1_3_root_access_key_absent(client, _empty_paginator())
+
+    assert findings[0].status is FindingStatus.MANUAL_CHECK
+    assert findings[0].severity is Severity.HIGH
+    assert findings[0].raw_evidence["error"]["code"] == "AccessDenied"
+
+
+def test_credential_report_malformed_content_returns_explicit_manual_check() -> None:
+    client = _FakeIamClient(
+        credential_report_content=b"user,access_key_1_active\n<root_account>,false\n",
+    )
+
+    findings = check_cis_1_3_root_access_key_absent(client, _empty_paginator())
+
+    assert findings[0].status is FindingStatus.MANUAL_CHECK
+    assert findings[0].raw_evidence["error"]["code"] == "MalformedCredentialReport"
+
+
+def test_credential_report_missing_content_returns_explicit_manual_check() -> None:
+    client = _FakeIamClient(credential_report_response={})
+
+    findings = check_cis_1_3_root_access_key_absent(client, _empty_paginator())
+
+    assert findings[0].status is FindingStatus.MANUAL_CHECK
+    assert findings[0].raw_evidence["error"]["code"] == "MalformedCredentialReport"
+
+
+def test_credential_report_malformed_date_returns_explicit_manual_check() -> None:
+    client = _FakeIamClient(
+        credential_report_rows=[
+            _root_row(),
+            _user_row(
+                "alice",
+                password_enabled="true",
+                password_last_changed="not-a-date",
+            ),
+        ],
+    )
+
+    findings = check_cis_1_11_unused_credentials_removed(client, _empty_paginator())
+
+    assert findings[0].status is FindingStatus.MANUAL_CHECK
+    assert findings[0].raw_evidence["error"]["code"] == "MalformedCredentialReport"
 
 
 @pytest.mark.parametrize(
@@ -289,6 +397,7 @@ def test_cis_1_5_root_hardware_mfa_permission_denied_returns_manual_check() -> N
     )
 
     assert findings[0].status is FindingStatus.MANUAL_CHECK
+    assert findings[0].severity is Severity.HIGH
 
 
 @pytest.mark.parametrize(
@@ -299,7 +408,8 @@ def test_cis_1_5_root_hardware_mfa_permission_denied_returns_manual_check() -> N
     ],
 )
 def test_cis_1_7_password_min_length(
-    policy: dict[str, Any], expected_status: FindingStatus,
+    policy: dict[str, Any],
+    expected_status: FindingStatus,
 ) -> None:
     findings = check_cis_1_7_password_min_length_14(
         _FakeIamClient(get_account_password_policy=policy),
@@ -326,7 +436,8 @@ def test_cis_1_7_password_min_length_permission_denied_returns_manual_check() ->
     ],
 )
 def test_cis_1_8_password_reuse_prevention(
-    policy: dict[str, Any], expected_status: FindingStatus,
+    policy: dict[str, Any],
+    expected_status: FindingStatus,
 ) -> None:
     findings = check_cis_1_8_password_reuse_prevention(
         _FakeIamClient(get_account_password_policy=policy),
@@ -359,7 +470,8 @@ def test_cis_1_8_password_reuse_permission_denied_returns_manual_check() -> None
     ],
 )
 def test_cis_1_9_console_users_have_mfa(
-    rows: list[dict[str, str]], expected_status: FindingStatus,
+    rows: list[dict[str, str]],
+    expected_status: FindingStatus,
 ) -> None:
     findings = check_cis_1_9_console_users_have_mfa(
         _iam_client_with_report(rows),
@@ -398,7 +510,8 @@ def test_cis_1_9_console_users_mfa_permission_denied_returns_manual_check() -> N
     ],
 )
 def test_cis_1_11_unused_credentials_removed(
-    rows: list[dict[str, str]], expected_status: FindingStatus,
+    rows: list[dict[str, str]],
+    expected_status: FindingStatus,
 ) -> None:
     findings = check_cis_1_11_unused_credentials_removed(
         _iam_client_with_report(rows),
@@ -488,7 +601,8 @@ def test_cis_1_11_uses_creation_dates_for_never_used_credentials(
     ],
 )
 def test_cis_1_13_access_keys_rotated(
-    access_keys: list[dict[str, Any]], expected_status: FindingStatus,
+    access_keys: list[dict[str, Any]],
+    expected_status: FindingStatus,
 ) -> None:
     findings = check_cis_1_13_access_keys_rotated(
         object(),
@@ -561,7 +675,7 @@ def test_cis_1_14_direct_user_policy_permission_denied_returns_manual_check() ->
         ({"Statement": [{"Effect": "Allow", "Action": "*", "Resource": "*"}]}, FindingStatus.FAIL),
         (
             {"Statement": [{"Effect": "Allow", "NotAction": "iam:*", "Resource": "*"}]},
-            FindingStatus.PASS,
+            FindingStatus.FAIL,
         ),
         (
             {"Statement": [{"Effect": "Allow", "Action": "*", "NotResource": "*"}]},
@@ -584,7 +698,12 @@ def test_cis_1_15_no_admin_wildcard_policies(
             },
         ),
         _FakePaginatorUtil(
-            {("list_policies", "Policies"): [{"Arn": policy_arn, "DefaultVersionId": "v1"}]},
+            {
+                ("list_policies", "Policies"): [{"Arn": policy_arn, "DefaultVersionId": "v1"}],
+                ("list_users", "Users"): [],
+                ("list_groups", "Groups"): [],
+                ("list_roles", "Roles"): [],
+            },
         ),
     )
 
@@ -603,7 +722,12 @@ def test_cis_1_15_admin_policy_permission_denied_returns_manual_check() -> None:
 def test_cis_1_15_evaluates_attached_aws_managed_admin_policies() -> None:
     policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
     paginator_util = _FakePaginatorUtil(
-        {("list_policies", "Policies"): [{"Arn": policy_arn, "DefaultVersionId": "v1"}]},
+        {
+            ("list_policies", "Policies"): [{"Arn": policy_arn, "DefaultVersionId": "v1"}],
+            ("list_users", "Users"): [],
+            ("list_groups", "Groups"): [],
+            ("list_roles", "Roles"): [],
+        },
     )
 
     findings = check_cis_1_15_no_admin_wildcard_policies(
@@ -632,6 +756,168 @@ def test_cis_1_15_evaluates_attached_aws_managed_admin_policies() -> None:
     assert paginator_util.calls[0]["kwargs"] == {"OnlyAttached": True}
 
 
+def test_cis_1_15_evaluates_attached_customer_managed_admin_policies() -> None:
+    policy_arn = "arn:aws:iam::123456789012:policy/AdminLike"
+
+    findings = check_cis_1_15_no_admin_wildcard_policies(
+        _FakeIamClient(
+            policies={
+                policy_arn: {
+                    "metadata": {"Policy": {"Arn": policy_arn, "DefaultVersionId": "v3"}},
+                    "versions": {
+                        "v3": {
+                            "PolicyVersion": {
+                                "Document": {
+                                    "Statement": [
+                                        {
+                                            "Effect": "Allow",
+                                            "Action": ["*"],
+                                            "Resource": ["*"],
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        ),
+        _FakePaginatorUtil(
+            {
+                ("list_policies", "Policies"): [{"Arn": policy_arn}],
+                ("list_users", "Users"): [],
+                ("list_groups", "Groups"): [],
+                ("list_roles", "Roles"): [],
+            },
+        ),
+    )
+
+    assert findings[0].status is FindingStatus.FAIL
+
+
+def test_cis_1_15_evaluates_inline_user_admin_policy() -> None:
+    findings = check_cis_1_15_no_admin_wildcard_policies(
+        _FakeIamClient(
+            policies={},
+            inline_user_policies={
+                ("alice", "InlineAdmin"): {
+                    "PolicyDocument": {
+                        "Statement": [
+                            {"Effect": "Allow", "Action": "*", "Resource": "*"},
+                        ],
+                    },
+                },
+            },
+            inline_group_policies={},
+            inline_role_policies={},
+        ),
+        _FakePaginatorUtil(
+            {
+                ("list_policies", "Policies"): [],
+                ("list_users", "Users"): [{"UserName": "alice"}],
+                ("list_user_policies", "PolicyNames"): ["InlineAdmin"],
+                ("list_groups", "Groups"): [],
+                ("list_roles", "Roles"): [],
+            },
+        ),
+    )
+
+    assert findings[0].status is FindingStatus.FAIL
+
+
+def test_cis_1_15_evaluates_inline_group_admin_policy() -> None:
+    findings = check_cis_1_15_no_admin_wildcard_policies(
+        _FakeIamClient(
+            policies={},
+            inline_user_policies={},
+            inline_group_policies={
+                ("admins", "InlineAdmin"): {
+                    "PolicyDocument": {
+                        "Statement": [
+                            {"Effect": "Allow", "Action": "*", "Resource": "*"},
+                        ],
+                    },
+                },
+            },
+            inline_role_policies={},
+        ),
+        _FakePaginatorUtil(
+            {
+                ("list_policies", "Policies"): [],
+                ("list_users", "Users"): [],
+                ("list_groups", "Groups"): [{"GroupName": "admins"}],
+                ("list_group_policies", "PolicyNames"): ["InlineAdmin"],
+                ("list_roles", "Roles"): [],
+            },
+        ),
+    )
+
+    assert findings[0].status is FindingStatus.FAIL
+
+
+def test_cis_1_15_evaluates_inline_role_admin_policy() -> None:
+    findings = check_cis_1_15_no_admin_wildcard_policies(
+        _FakeIamClient(
+            policies={},
+            inline_user_policies={},
+            inline_group_policies={},
+            inline_role_policies={
+                ("BreakGlass", "InlineAdmin"): {
+                    "PolicyDocument": {
+                        "Statement": [
+                            {"Effect": "Allow", "Action": "*", "Resource": "*"},
+                        ],
+                    },
+                },
+            },
+        ),
+        _FakePaginatorUtil(
+            {
+                ("list_policies", "Policies"): [],
+                ("list_users", "Users"): [],
+                ("list_groups", "Groups"): [],
+                ("list_roles", "Roles"): [{"RoleName": "BreakGlass"}],
+                ("list_role_policies", "PolicyNames"): ["InlineAdmin"],
+            },
+        ),
+    )
+
+    assert findings[0].status is FindingStatus.FAIL
+
+
+@pytest.mark.parametrize(
+    ("document", "expected_admin"),
+    [
+        (
+            {"Statement": [{"Effect": "Allow", "Action": ["*"], "Resource": ["*"]}]},
+            True,
+        ),
+        (
+            {"Statement": [{"Effect": "Allow", "NotAction": "iam:*", "Resource": "*"}]},
+            True,
+        ),
+        (
+            {"Statement": [{"Effect": "Allow", "Action": ["s3:GetObject"], "Resource": "*"}]},
+            False,
+        ),
+        ("%7B%22Statement%22%3A%20%5B%5D%7D", False),
+    ],
+)
+def test_policy_document_evaluator_detects_admin_equivalent_statements(
+    document: object,
+    expected_admin: object,
+) -> None:
+    evaluation = evaluate_policy_document(document)
+
+    assert evaluation.has_admin_privileges is expected_admin
+
+
+def test_policy_document_evaluator_marks_malformed_documents() -> None:
+    evaluation = evaluate_policy_document("%7Bnot-json")
+
+    assert evaluation.malformed is True
+
+
 @pytest.mark.parametrize(
     ("roles", "expected_status"),
     [
@@ -643,7 +929,8 @@ def test_cis_1_15_evaluates_attached_aws_managed_admin_policies() -> None:
     ],
 )
 def test_cis_1_16_support_role_exists(
-    roles: list[dict[str, str]], expected_status: FindingStatus,
+    roles: list[dict[str, str]],
+    expected_status: FindingStatus,
 ) -> None:
     findings = check_cis_1_16_support_role_exists(
         object(),

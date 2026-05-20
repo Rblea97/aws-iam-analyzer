@@ -1,13 +1,13 @@
 # Demo Walkthrough
 
-This project is a CLI scanner, not a hosted web application. The safest public demo path uses synthetic sample data for screenshots and JSON examples, then a lab AWS account for live validation when credentials are available.
+This project is a CLI scanner, not a hosted web application. The safe public demo path uses synthetic sample data for screenshots and JSON examples. Lab-account scans are operator-run and local to the person holding AWS credentials.
 
 ## Public Demo Assets
 
 - Terminal renderer output: [`docs/assets/terminal-demo.svg`](assets/terminal-demo.svg)
 - Sample JSON report: [`docs/examples/sample-findings.json`](examples/sample-findings.json)
 
-Both assets use fictional resources and placeholder account data. They are generated from the same Pydantic models and Rich terminal renderer used by the production CLI, but they do not come from a real AWS account.
+Both assets use fictional resources and placeholder account data. They do not come from a real AWS account.
 
 ## Reviewer Commands
 
@@ -22,7 +22,7 @@ Get-Content .\docs\examples\sample-findings.json
 
 ## Lab Account Scan
 
-Before scanning a real AWS account, attach [`docs/scanner-iam-policy.json`](scanner-iam-policy.json) to a lab scanner role or IAM principal.
+Before scanning a real AWS account, attach [`docs/scanner-iam-policy.json`](scanner-iam-policy.json) to a lab scanner role or IAM principal and review it against local account guardrails.
 
 Run locally:
 
@@ -40,6 +40,12 @@ docker run --rm `
 ```
 
 On Windows Docker Desktop, host bind-mounted output directories can be sensitive to filesystem permissions for the non-root container user. If a direct bind-mounted `/reports` path fails, write to `/home/appuser/findings.json` inside the container and copy the file out with `docker cp`.
+
+## Validation Status
+
+- No live AWS validation is part of normal CI.
+- No repository file proves that a lab-account scan has run successfully; lab validation is `UNVERIFIED` from local files.
+- Public examples are suitable for documentation review, not proof of account compliance.
 
 ## Public Sharing Rules
 

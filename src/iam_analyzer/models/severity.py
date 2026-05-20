@@ -18,3 +18,5 @@ class FindingStatus(StrEnum):
     PASS = "PASS"  # noqa: S105
     FAIL = "FAIL"
     MANUAL_CHECK = "MANUAL_CHECK"
+    ERROR = "ERROR"
+    NOT_APPLICABLE = "NOT_APPLICABLE"

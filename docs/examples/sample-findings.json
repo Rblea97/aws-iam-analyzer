@@ -64,13 +64,18 @@
       "EHC-CT-1"
     ],
     "duration_ms": 948,
+    "schema_version": "1.1",
     "scan_timestamp": "2026-05-19T18:30:00Z"
   },
   "summary": {
     "CRITICAL": 0,
+    "ERROR": 0,
+    "FAIL": 2,
     "HIGH": 2,
     "LOW": 1,
+    "MANUAL_CHECK": 1,
     "MEDIUM": 0,
+    "NOT_APPLICABLE": 0,
     "PASS": 1
   }
 }

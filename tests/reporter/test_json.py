@@ -8,7 +8,9 @@ import json
 import os
 import stat
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from pathlib import Path
+
+import pytest
 
 from iam_analyzer.checks.registry import CONTROL_REGISTRY
 from iam_analyzer.models import (
@@ -20,9 +22,6 @@ from iam_analyzer.models import (
     Severity,
 )
 from iam_analyzer.reporter.json import write_json_report
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 _REPORT_FILE_MODE = 0o600
 
@@ -88,3 +87,51 @@ def test_write_json_report_sets_owner_only_permissions_when_supported(tmp_path: 
         assert mode == _REPORT_FILE_MODE
     else:
         assert output_path.exists()
+
+
+def test_write_json_report_temp_file_is_owner_only_before_replace(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    if os.name != "posix":
+        pytest.skip("POSIX mode bits are not reliable on this platform")
+
+    output_path = tmp_path / "report.json"
+    observed_modes: list[int] = []
+    original_replace = os.replace
+    original_umask = os.umask(0)
+
+    def replace_after_mode_check(
+        source: str | os.PathLike[str],
+        destination: str | os.PathLike[str],
+    ) -> None:
+        observed_modes.append(stat.S_IMODE(Path(source).stat().st_mode))
+        original_replace(source, destination)
+
+    try:
+        monkeypatch.setattr("iam_analyzer.reporter.json.os.replace", replace_after_mode_check)
+        write_json_report(_scan_result(), output_path)
+    finally:
+        os.umask(original_umask)
+
+    assert observed_modes == [_REPORT_FILE_MODE]
+    assert stat.S_IMODE(output_path.stat().st_mode) == _REPORT_FILE_MODE
+
+
+def test_write_json_report_cleans_temp_file_when_write_fails(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    output_path = tmp_path / "report.json"
+
+    def raise_during_dump(*_args: object, **_kwargs: object) -> None:
+        message = "simulated write failure"
+        raise OSError(message)
+
+    monkeypatch.setattr("iam_analyzer.reporter.json.json.dump", raise_during_dump)
+
+    with pytest.raises(OSError, match="simulated write failure"):
+        write_json_report(_scan_result(), output_path)
+
+    assert not output_path.exists()
+    assert not (tmp_path / "report.json.tmp").exists()

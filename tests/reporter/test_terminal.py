@@ -82,8 +82,29 @@ def test_terminal_report_includes_summary_counts() -> None:
     assert "15" in output
     for header in ("Control ID", "Severity", "Status", "Resource", "Title"):
         assert header in output
-    for label in ("CRITICAL", "HIGH", "MEDIUM", "LOW", "PASS"):
+    for label in ("CRITICAL", "HIGH", "MEDIUM", "LOW", "PASS", "NOT_APPLICABLE"):
         assert label in output
+
+
+def test_terminal_report_includes_not_applicable_summary_count() -> None:
+    console = _console()
+    result = _scan_result(
+        [],
+        ScanSummary(
+            CRITICAL=0,
+            HIGH=0,
+            MEDIUM=0,
+            LOW=0,
+            PASS=1,
+            NOT_APPLICABLE=2,
+        ),
+    )
+
+    render_terminal_report(result, console=console)
+    output = console.export_text()
+
+    assert "NOT_APPLICABLE" in output
+    assert "2" in output
 
 
 def test_pass_findings_are_not_mixed_into_failure_table() -> None:

@@ -15,6 +15,7 @@ from iam_analyzer.models import Finding, FindingStatus, ScanResult, Severity
 from iam_analyzer.scanner.orchestrator import run_scan
 
 _EXPECTED_DURATION_MS = 125
+_EXPECTED_HIGH_FINDINGS = 2
 
 
 class _FakeSessionManager:
@@ -198,6 +199,37 @@ def test_run_scan_counts_summary_buckets_and_duration(
     assert result.scan_metadata.duration_ms == _EXPECTED_DURATION_MS
 
 
+def test_run_scan_counts_statuses_separately_from_severity() -> None:
+    session_manager = _FakeSessionManager()
+
+    result = run_scan(
+        session_manager,
+        region="us-east-1",
+        check_specs=(
+            CheckSpec(
+                control_id="CIS-1.3",
+                title="CIS-1.3 test control",
+                service="iam",
+                required_services=("iam",),
+                function=lambda _client, _paginator: [
+                    _finding("CIS-1.3", status=FindingStatus.PASS, severity=Severity.LOW),
+                    _finding("CIS-1.5", status=FindingStatus.FAIL, severity=Severity.HIGH),
+                    _finding(
+                        "CIS-3.1",
+                        status=FindingStatus.MANUAL_CHECK,
+                        severity=Severity.HIGH,
+                    ),
+                ],
+            ),
+        ),
+    )
+
+    assert result.summary.PASS == 1
+    assert result.summary.FAIL == 1
+    assert result.summary.MANUAL_CHECK == 1
+    assert result.summary.HIGH == _EXPECTED_HIGH_FINDINGS
+
+
 def test_run_scan_logs_completion_event(monkeypatch: pytest.MonkeyPatch) -> None:
     session_manager = _FakeSessionManager()
     logger = _FakeLogger()
@@ -228,8 +260,12 @@ def test_run_scan_logs_completion_event(monkeypatch: pytest.MonkeyPatch) -> None
                 "findings_count": 1,
                 "summary": {
                     "CRITICAL": 0,
+                    "ERROR": 0,
+                    "FAIL": 0,
                     "HIGH": 0,
+                    "MANUAL_CHECK": 0,
                     "MEDIUM": 0,
+                    "NOT_APPLICABLE": 0,
                     "LOW": 0,
                     "PASS": 1,
                 },

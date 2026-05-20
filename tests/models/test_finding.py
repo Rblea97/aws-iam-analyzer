@@ -191,6 +191,7 @@ def test_scan_result_model_dump_json_matches_required_top_level_structure() -> N
     assert set(dumped) == {"scan_metadata", "summary", "findings"}
     assert dumped["scan_metadata"] == {
         "account_id": "123456789012",
+        "schema_version": "1.1",
         "scan_timestamp": "2026-05-17T22:30:00Z",
         "benchmark": "CIS AWS Foundations Benchmark v5.0.0",
         "controls_evaluated": ["CIS-1.5"],
@@ -198,8 +199,12 @@ def test_scan_result_model_dump_json_matches_required_top_level_structure() -> N
     }
     assert dumped["summary"] == {
         "CRITICAL": 0,
+        "ERROR": 0,
+        "FAIL": 0,
         "HIGH": 1,
+        "MANUAL_CHECK": 0,
         "MEDIUM": 0,
+        "NOT_APPLICABLE": 0,
         "LOW": 0,
         "PASS": 0,
     }
