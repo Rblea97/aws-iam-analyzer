@@ -27,28 +27,32 @@ _LOGGER = structlog.get_logger(__name__)
 
 
 def _summary(findings: list[Finding]) -> ScanSummary:
+    severity_counted_statuses = {
+        FindingStatus.FAIL,
+        FindingStatus.MANUAL_CHECK,
+        FindingStatus.ERROR,
+    }
+
+    def severity_count(severity: Severity) -> int:
+        return sum(
+            1
+            for finding in findings
+            if finding.status in severity_counted_statuses and finding.severity is severity
+        )
+
+    def status_count(status: FindingStatus) -> int:
+        return sum(1 for finding in findings if finding.status is status)
+
     return ScanSummary(
-        CRITICAL=sum(
-            1
-            for finding in findings
-            if finding.status is not FindingStatus.PASS and finding.severity is Severity.CRITICAL
-        ),
-        HIGH=sum(
-            1
-            for finding in findings
-            if finding.status is not FindingStatus.PASS and finding.severity is Severity.HIGH
-        ),
-        MEDIUM=sum(
-            1
-            for finding in findings
-            if finding.status is not FindingStatus.PASS and finding.severity is Severity.MEDIUM
-        ),
-        LOW=sum(
-            1
-            for finding in findings
-            if finding.status is not FindingStatus.PASS and finding.severity is Severity.LOW
-        ),
-        PASS=sum(1 for finding in findings if finding.status is FindingStatus.PASS),
+        CRITICAL=severity_count(Severity.CRITICAL),
+        HIGH=severity_count(Severity.HIGH),
+        MEDIUM=severity_count(Severity.MEDIUM),
+        LOW=severity_count(Severity.LOW),
+        PASS=status_count(FindingStatus.PASS),
+        FAIL=status_count(FindingStatus.FAIL),
+        MANUAL_CHECK=status_count(FindingStatus.MANUAL_CHECK),
+        ERROR=status_count(FindingStatus.ERROR),
+        NOT_APPLICABLE=status_count(FindingStatus.NOT_APPLICABLE),
     )
 
 

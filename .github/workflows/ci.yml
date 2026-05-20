@@ -31,6 +31,9 @@ jobs:
       - name: Ruff
         run: ruff check --select ALL .
 
+      - name: Code shape
+        run: python tools/code_shape.py src
+
       - name: Mypy
         run: mypy --strict src/
 

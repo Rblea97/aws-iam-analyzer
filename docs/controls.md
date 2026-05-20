@@ -1,16 +1,18 @@
 # Controls
 
-This page documents the controls registered for `aws-iam-analyzer` and the subset currently evaluated by the scanner orchestrator.
+This page documents the control catalog for `aws-iam-analyzer`. The executable source of truth is `src/iam_analyzer/checks/catalog.py`.
 
-`Strict CIS` controls map to CIS AWS Foundations Benchmark v5.0.0 IDs. `Enterprise hardening` controls are useful CloudTrail checks that are intentionally not reported as CIS findings.
+`Strict CIS` controls map to CIS AWS Foundations Benchmark v5.0.0 IDs where the project has executable evidence collection. `Enterprise hardening` controls are additional CloudTrail checks and are not reported as CIS findings.
 
 ## Coverage Summary
 
-- Executable strict CIS controls: 15
-- Executable enterprise hardening controls: 3
-- Registered strict CIS roadmap controls not yet evaluated: 8
+- Executable strict CIS controls: 15.
+- Executable enterprise hardening controls: 3.
+- Registered strict CIS roadmap controls not yet evaluated: 8.
 
-The executable list is the source of truth for scan output. Registered roadmap controls are present so Pydantic validation and documentation can keep stable CIS IDs, but they do not appear in reports until a dedicated check function, tests, catalog entry, and scanner IAM permission update are added.
+Registered roadmap controls are available for metadata continuity and model validation. They do not appear in scan output until a dedicated check function, tests, catalog entry, documentation update, and scanner policy update are added.
+
+For evaluator details, emitted statuses, limitations, and test references, see [`docs/control-traceability.md`](control-traceability.md).
 
 ## Currently Evaluated Controls
 
@@ -24,7 +26,7 @@ The executable list is the source of truth for scan output. Registered roadmap c
 | CIS-1.11 | Ensure credentials unused for 45 days or more are removed | Strict CIS | `iam:GenerateCredentialReport`, `iam:GetCredentialReport` | MEDIUM | Remove or disable IAM credentials unused for 45 days or more. |
 | CIS-1.13 | Ensure access keys are rotated every 90 days or less | Strict CIS | `iam:ListUsers`, `iam:ListAccessKeys` | HIGH | Rotate active IAM access keys older than 90 days. |
 | CIS-1.14 | Ensure IAM users receive permissions only through groups | Strict CIS | `iam:ListUsers`, `iam:ListUserPolicies`, `iam:ListAttachedUserPolicies` | MEDIUM | Remove direct user policies and grant permissions through IAM groups. |
-| CIS-1.15 | Ensure IAM policies that allow full administrative privileges are not attached | Strict CIS | `iam:ListPolicies`, `iam:GetPolicy`, `iam:GetPolicyVersion` | HIGH | Detach or replace policies that allow `Action: "*"` on `Resource: "*"`. |
+| CIS-1.15 | Ensure IAM policies that allow full administrative privileges are not attached | Strict CIS | `iam:ListPolicies`, `iam:GetPolicy`, `iam:GetPolicyVersion`, `iam:ListUsers`, `iam:ListUserPolicies`, `iam:GetUserPolicy`, `iam:ListGroups`, `iam:ListGroupPolicies`, `iam:GetGroupPolicy`, `iam:ListRoles`, `iam:ListRolePolicies`, `iam:GetRolePolicy` | HIGH | Detach or replace policies that grant obvious admin-equivalent access. |
 | CIS-1.16 | Ensure a support role has been created to manage incidents with AWS Support | Strict CIS | `iam:ListEntitiesForPolicy` | LOW | Create an incident response role with the `AWSSupportAccess` policy. |
 | CIS-1.21 | Ensure access to AWSCloudShellFullAccess is restricted | Strict CIS | `iam:ListEntitiesForPolicy` | MEDIUM | Detach `AWSCloudShellFullAccess` from identities that do not require it. |
 | CIS-3.1 | Ensure CloudTrail is enabled and configured with at least one multi-Region trail | Strict CIS | `cloudtrail:DescribeTrails`, `cloudtrail:GetTrailStatus`, `cloudtrail:GetEventSelectors` | HIGH | Configure a multi-Region CloudTrail trail that logs global service events and read/write management events. |
@@ -37,15 +39,15 @@ The executable list is the source of truth for scan output. Registered roadmap c
 
 ## Registered Strict CIS Controls Not Yet Evaluated
 
-The following CIS v5.0.0 controls are registered in code for model validation and roadmap continuity, but they are not included in the executable `CHECK_SPECS` catalog yet. They should not appear in scan output until a dedicated check function and tests are added. The evidence APIs listed here are planned implementation inputs and are not part of the scanner IAM policy until the checks are implemented.
+The following CIS v5.0.0 controls are registered in code for roadmap continuity, but they are not included in `CHECK_SPECS`. The evidence APIs listed here are planned inputs and are not part of the scanner IAM policy until implementation.
 
 | ID | Title | Category | Evidence APIs | Severity | Remediation summary |
 | --- | --- | --- | --- | --- | --- |
-| CIS-1.4 | Ensure MFA is enabled for the root user account | Strict CIS | Planned: `iam:GetAccountSummary` | HIGH | Enable MFA for the root user account before reporting this control. |
-| CIS-1.6 | Eliminate use of the root user for administrative and daily tasks | Strict CIS | Planned: `iam:GenerateCredentialReport`, `iam:GetCredentialReport` | HIGH | Remove routine root usage and reserve root for account-only break-glass tasks. |
-| CIS-1.10 | Do not create access keys during initial setup for IAM users with a console password | Strict CIS | Planned: `iam:GenerateCredentialReport`, `iam:GetCredentialReport` | MEDIUM | Remove access keys created during initial IAM user setup for console users. |
-| CIS-1.12 | Ensure there is only one active access key for any single IAM user | Strict CIS | Planned: `iam:ListUsers`, `iam:ListAccessKeys` | MEDIUM | Deactivate or delete excess active access keys so each IAM user has no more than one active key. |
-| CIS-1.17 | Ensure IAM instance roles are used for AWS resource access from instances | Strict CIS | Planned: `ec2:DescribeRegions`, `ec2:DescribeInstances`, `iam:GetInstanceProfile` | MEDIUM | Attach IAM instance profiles to EC2 workloads instead of distributing long-lived credentials. |
-| CIS-1.18 | Ensure that all expired SSL/TLS certificates stored in IAM are removed | Strict CIS | Planned: `iam:ListServerCertificates`, `iam:GetServerCertificate` | LOW | Delete expired IAM server certificates or migrate certificate management to AWS Certificate Manager. |
-| CIS-1.19 | Ensure that IAM External Access Analyzer is enabled for all regions | Strict CIS | Planned: `ec2:DescribeRegions`, `access-analyzer:ListAnalyzers` | MEDIUM | Enable IAM Access Analyzer in every enabled AWS Region. |
-| CIS-1.20 | Ensure IAM users are managed centrally via identity federation or AWS Organizations | Strict CIS | Planned: `iam:ListUsers`, `organizations:DescribeOrganization` | MEDIUM | Manage human access through a central identity provider or AWS Organizations rather than standalone IAM users. |
+| CIS-1.4 | Ensure MFA is enabled for the root user account | Strict CIS roadmap | Planned: `iam:GetAccountSummary` | HIGH | Enable MFA for the root user account before reporting this control. |
+| CIS-1.6 | Eliminate use of the root user for administrative and daily tasks | Strict CIS roadmap | Planned: `iam:GenerateCredentialReport`, `iam:GetCredentialReport` | HIGH | Remove routine root usage and reserve root for account-only break-glass tasks. |
+| CIS-1.10 | Do not create access keys during initial setup for IAM users with a console password | Strict CIS roadmap | Planned: `iam:GenerateCredentialReport`, `iam:GetCredentialReport` | MEDIUM | Remove access keys created during initial IAM user setup for console users. |
+| CIS-1.12 | Ensure there is only one active access key for any single IAM user | Strict CIS roadmap | Planned: `iam:ListUsers`, `iam:ListAccessKeys` | MEDIUM | Deactivate or delete excess active access keys so each IAM user has no more than one active key. |
+| CIS-1.17 | Ensure IAM instance roles are used for AWS resource access from instances | Strict CIS roadmap | Planned: `ec2:DescribeRegions`, `ec2:DescribeInstances`, `iam:GetInstanceProfile` | MEDIUM | Attach IAM instance profiles to EC2 workloads instead of distributing long-lived credentials. |
+| CIS-1.18 | Ensure that all expired SSL/TLS certificates stored in IAM are removed | Strict CIS roadmap | Planned: `iam:ListServerCertificates`, `iam:GetServerCertificate` | LOW | Delete expired IAM server certificates or migrate certificate management to AWS Certificate Manager. |
+| CIS-1.19 | Ensure that IAM External Access Analyzer is enabled for all regions | Strict CIS roadmap | Planned: `ec2:DescribeRegions`, `access-analyzer:ListAnalyzers` | MEDIUM | Enable IAM Access Analyzer in every enabled AWS Region. |
+| CIS-1.20 | Ensure IAM users are managed centrally via identity federation or AWS Organizations | Strict CIS roadmap | Planned: `iam:ListUsers`, `organizations:DescribeOrganization` | MEDIUM | Manage human access through a central identity provider or AWS Organizations rather than standalone IAM users. |

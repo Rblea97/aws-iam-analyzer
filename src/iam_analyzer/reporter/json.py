@@ -18,11 +18,21 @@ def write_json_report(scan_result: ScanResult, output_path: str | Path) -> Path:
     destination = Path(output_path)
     temporary = destination.with_name(f"{destination.name}.tmp")
     payload = scan_result.model_dump(mode="json")
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    file_descriptor = os.open(temporary, flags, _REPORT_FILE_MODE)
 
-    with temporary.open("w", encoding="utf-8") as report_file:
-        json.dump(payload, report_file, indent=2, sort_keys=True)
-        report_file.write("\n")
+    try:
+        with os.fdopen(file_descriptor, "w", encoding="utf-8") as report_file:
+            file_descriptor = -1
+            json.dump(payload, report_file, indent=2, sort_keys=True)
+            report_file.write("\n")
 
-    os.replace(temporary, destination)  # noqa: PTH105 - spec requires os.replace.
-    destination.chmod(_REPORT_FILE_MODE)
-    return destination
+        os.replace(temporary, destination)  # noqa: PTH105 - spec requires os.replace.
+        destination.chmod(_REPORT_FILE_MODE)
+    except BaseException:
+        if file_descriptor != -1:
+            os.close(file_descriptor)
+        temporary.unlink(missing_ok=True)
+        raise
+    else:
+        return destination

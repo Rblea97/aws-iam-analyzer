@@ -9,7 +9,7 @@ from rich.markup import escape
 from rich.panel import Panel
 from rich.table import Table
 
-from iam_analyzer.models import Finding, FindingStatus, ScanResult, Severity
+from iam_analyzer.models import Finding, FindingStatus, ScanResult, ScanSummary, Severity
 
 _SEVERITY_ORDER = {
     Severity.CRITICAL: 0,
@@ -33,9 +33,7 @@ def _timestamp(scan_result: ScanResult) -> str:
 
 def _non_passing_findings(scan_result: ScanResult) -> list[Finding]:
     findings = [
-        finding
-        for finding in scan_result.findings
-        if finding.status is not FindingStatus.PASS
+        finding for finding in scan_result.findings if finding.status is not FindingStatus.PASS
     ]
     return sorted(findings, key=lambda finding: _SEVERITY_ORDER[finding.severity])
 
@@ -46,27 +44,44 @@ def _passing_count(scan_result: ScanResult) -> int:
 
 def _summary_panel(scan_result: ScanResult) -> Panel:
     summary = scan_result.summary
-    total = summary.CRITICAL + summary.HIGH + summary.MEDIUM + summary.LOW + summary.PASS
+    total = _summary_total(scan_result)
     table = Table(title="Scan summary", show_header=True, header_style="bold")
     table.add_column("Account ID")
     table.add_column("Timestamp")
     table.add_column("Total findings", justify="right")
-    table.add_column("CRITICAL", justify="right")
-    table.add_column("HIGH", justify="right")
-    table.add_column("MEDIUM", justify="right")
-    table.add_column("LOW", justify="right")
-    table.add_column("PASS", justify="right")
+    table.add_column("Status counts")
+    table.add_column("Severity counts")
     table.add_row(
         escape(scan_result.scan_metadata.account_id),
         escape(_timestamp(scan_result)),
         str(total),
-        str(summary.CRITICAL),
-        str(summary.HIGH),
-        str(summary.MEDIUM),
-        str(summary.LOW),
-        str(summary.PASS),
+        _status_counts(summary),
+        _severity_counts(summary),
     )
     return Panel(table, title="CIS AWS Foundations Benchmark v5.0.0", border_style="cyan")
+
+
+def _status_counts(summary: ScanSummary) -> str:
+    return "\n".join(
+        (
+            f"PASS={summary.PASS}",
+            f"FAIL={summary.FAIL}",
+            f"MANUAL_CHECK={summary.MANUAL_CHECK}",
+            f"ERROR={summary.ERROR}",
+            f"NOT_APPLICABLE={summary.NOT_APPLICABLE}",
+        ),
+    )
+
+
+def _severity_counts(summary: ScanSummary) -> str:
+    return "\n".join(
+        (
+            f"CRITICAL={summary.CRITICAL}",
+            f"HIGH={summary.HIGH}",
+            f"MEDIUM={summary.MEDIUM}",
+            f"LOW={summary.LOW}",
+        ),
+    )
 
 
 def _severity_cell(severity: Severity) -> str:
@@ -106,12 +121,29 @@ def _passing_panel(scan_result: ScanResult) -> Panel | None:
 
 
 def _summary_failure_count(scan_result: ScanResult) -> int:
-    return (
+    status_failures = (
+        scan_result.summary.FAIL
+        + scan_result.summary.MANUAL_CHECK
+        + scan_result.summary.ERROR
+        + scan_result.summary.NOT_APPLICABLE
+    )
+    severity_failures = (
         scan_result.summary.CRITICAL
         + scan_result.summary.HIGH
         + scan_result.summary.MEDIUM
         + scan_result.summary.LOW
     )
+    return max(status_failures, severity_failures)
+
+
+def _summary_total(scan_result: ScanResult) -> int:
+    summary = scan_result.summary
+    status_total = (
+        summary.PASS + summary.FAIL + summary.MANUAL_CHECK + summary.ERROR + summary.NOT_APPLICABLE
+    )
+    if summary.FAIL or summary.MANUAL_CHECK or summary.ERROR or summary.NOT_APPLICABLE:
+        return status_total
+    return summary.PASS + summary.CRITICAL + summary.HIGH + summary.MEDIUM + summary.LOW
 
 
 def render_terminal_report(scan_result: ScanResult, *, console: Console | None = None) -> None:

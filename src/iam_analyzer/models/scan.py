@@ -20,6 +20,7 @@ class ScanMetadata(BaseModel):
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
     account_id: str = Field(min_length=1)
+    schema_version: str = Field(default="1.1", min_length=1)
     scan_timestamp: datetime
     benchmark: str = Field(min_length=1)
     controls_evaluated: tuple[str, ...]
@@ -53,7 +54,7 @@ class ScanMetadata(BaseModel):
 
 
 class ScanSummary(BaseModel):
-    """Aggregated finding counts by required report bucket."""
+    """Aggregated finding counts by severity and evaluation status."""
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
@@ -62,6 +63,10 @@ class ScanSummary(BaseModel):
     MEDIUM: int = Field(ge=0)
     LOW: int = Field(ge=0)
     PASS: int = Field(ge=0)
+    FAIL: int = Field(default=0, ge=0)
+    MANUAL_CHECK: int = Field(default=0, ge=0)
+    ERROR: int = Field(default=0, ge=0)
+    NOT_APPLICABLE: int = Field(default=0, ge=0)
 
 
 class ScanResult(BaseModel):
